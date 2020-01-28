@@ -5,18 +5,23 @@
 
 // Package geometry defines simple types for plane geometry.
 //!+point
-package geometry
+package main
 
-import "math"
+import (
+	"math"
+	"math/rand"
+	"os"
+)
 
+//Point X,Y
 type Point struct{ X, Y float64 }
 
-// traditional function
+//Distance traditional function
 func Distance(p, q Point) float64 {
 	return math.Hypot(q.X-p.X, q.Y-p.Y)
 }
 
-// same thing, but as a method of the Point type
+//Distance same thing, but as a method of the Point type
 func (p Point) Distance(q Point) float64 {
 	return math.Hypot(q.X-p.X, q.Y-p.Y)
 }
@@ -40,3 +45,15 @@ func (path Path) Distance() float64 {
 }
 
 //!-path
+
+func main() {
+	args := os.Args[1:]
+	sides := args[0]
+	max := 100
+	min := -100
+	poly := []Point{}
+
+	for range sides {
+		poly = append(poly, Point{rand.Float64(max-min) + min, rand.Float64(max-min) + min})
+	}
+}
