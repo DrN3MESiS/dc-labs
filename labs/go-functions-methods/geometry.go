@@ -114,7 +114,7 @@ func main() {
 	poly := []Point{}
 
 	for _, p := range points {
-		fmt.Printf(" - (%f, %f)\n", p.X(), p.Y())
+		fmt.Printf("\t- (%f, %f)\n", p.X(), p.Y())
 		for _, q := range points {
 			if p == q {
 				continue
@@ -139,5 +139,5 @@ func main() {
 	//No utilice las maneras mas eficientes para realizar todos los calculos
 	fmt.Println("- Figure's Perimeter")
 	final := perimiter(poly)
-	fmt.Printf(" - %f", final)
+	fmt.Printf("\t- %f", final)
 }
