@@ -2,9 +2,11 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net"
+	"os"
 	"time"
 )
 
@@ -20,7 +22,15 @@ func handleConn(c net.Conn) {
 }
 
 func main() {
-	listener, err := net.Listen("tcp", "localhost:9090")
+	param := os.Args[1]
+	if param != "-port" {
+		panic("bruh")
+	}
+	port := os.Args[2]
+
+	url := fmt.Sprintf("localhost:%v", port)
+	fmt.Println("A new server has been hosted on: http://" + url)
+	listener, err := net.Listen("tcp", url)
 	if err != nil {
 		log.Fatal(err)
 	}
