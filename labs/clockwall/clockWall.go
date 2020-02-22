@@ -9,21 +9,24 @@ import (
 )
 
 func main() {
+	c := make(chan int)
 	for _, url := range os.Args[1:] {
 		data := strings.Split(url, "=")
-		done := make(chan string)
-		go getData(done, data)
-		out := <-done
-		fmt.Println(out)
+
+		go getData(c, data)
 	}
+	data := <-c
+	fmt.Println(data)
 }
 
-func getData(done chan string, data []string) {
+func getData(c chan int, data []string) {
+	fmt.Println(data)
 	conn, err := net.Dial("tcp", data[1])
 	if err != nil {
 		panic(err)
 	}
 
+	defer conn.Close()
 	io.Copy(os.Stdout, conn)
-	done <- fmt.Sprintf("%v", conn)
+	c <- 1
 }

@@ -19,19 +19,21 @@ func timeIn(t time.Time, name string) (time.Time, error) {
 }
 
 func handleConn(c net.Conn, d string) {
+	fmt.Println("===========\n- [Connection Open]\n- Format: " + d + "\n===========")
 	defer c.Close()
 	for {
 
 		convTime, err := timeIn(time.Now(), d)
-		_, err = io.WriteString(c, convTime.Format("15:04:05\n"))
+		_, err = io.WriteString(c, d+" : "+convTime.Format("15:04:05\n"))
 		if err != nil {
-			return // e.g., client disconnected
+			return
 		}
 		time.Sleep(1 * time.Second)
 	}
 }
 
 func main() {
+	tz := os.Getenv("BAR")
 	param := os.Args[1]
 	if param != "-port" {
 		panic("bruh")
@@ -44,12 +46,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Print(err) // e.g., connection aborted
 			continue
 		}
-		go handleConn(conn, os.Getenv("TZ")) // handle connections concurrently
+		go handleConn(conn, tz) // handle connections concurrently
 	}
 }
