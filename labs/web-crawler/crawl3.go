@@ -1,12 +1,3 @@
-// Copyright © 2016 Alan A. A. Donovan & Brian W. Kernighan.
-// License: https://creativecommons.org/licenses/by-nc-sa/4.0/
-
-// See page 241.
-
-// Crawl2 crawls web links starting with the command-line arguments.
-//
-// This version uses a buffered channel as a counting semaphore
-// to limit the number of concurrent calls to links.Extract.
 package main
 
 import (
@@ -56,29 +47,27 @@ func main() {
 		panic("Error parsing")
 	}
 
-	worklist := make(chan []string, DEPTH)
-	var n int // number of pending sends to worklist
-
-	// Start with the command-line arguments.
-	n++
+	worklist := make(chan []string)
 	go func() { worklist <- args[1:] }()
 
 	// Crawl the web concurrently.
 	seen := make(map[string]bool)
-	for ; n > 0; n-- {
-		list := <-worklist
-		for _, link := range list {
+
+	for i := 0; i <= DEPTH; i++ {
+		listOfLinks := <-worklist
+		for _, link := range listOfLinks {
 			if !seen[link] {
 				seen[link] = true
-				n++
+
 				go func(link string) {
 					worklist <- crawl(link)
 				}(link)
 			}
 		}
-	}
 
-	fmt.Println("\nDone!")
+		fmt.Println("LEVEL: " + strconv.Itoa(i))
+
+	}
 }
 
 //!-
