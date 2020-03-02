@@ -16,7 +16,6 @@ import (
 var tokens = make(chan struct{}, 20)
 
 func crawl(url string) []string {
-	fmt.Println(url)
 	tokens <- struct{}{} // acquire a token
 	list, err := links.Extract(url)
 	<-tokens // release the token
@@ -48,26 +47,41 @@ func main() {
 	}
 
 	worklist := make(chan []string)
-	go func() { worklist <- args[1:] }()
 
+	list := args[1:]
+	curDEPTH := 0
 	// Crawl the web concurrently.
 	seen := make(map[string]bool)
 
-	for i := 0; i <= DEPTH; i++ {
-		listOfLinks := <-worklist
-		for _, link := range listOfLinks {
-			if !seen[link] {
-				seen[link] = true
+	for true {
+		if curDEPTH > DEPTH {
+			break
+		}
+		fmt.Println("Level:" + strconv.Itoa(curDEPTH))
 
+		DEPTHlist := [][]string{}
+
+		for _, link := range list {
+			if !seen[link] {
+				fmt.Println("\t" + link)
 				go func(link string) {
 					worklist <- crawl(link)
 				}(link)
+				DEPTHlist = append(DEPTHlist, <-worklist)
 			}
 		}
 
-		fmt.Println("LEVEL: " + strconv.Itoa(i))
+		list = []string{}
 
+		for _, li := range DEPTHlist {
+			for _, link := range li {
+				list = append(list, link)
+			}
+		}
+
+		curDEPTH++
 	}
+
 }
 
 //!-
