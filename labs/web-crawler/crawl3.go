@@ -63,6 +63,7 @@ func main() {
 
 		for _, link := range list {
 			if !seen[link] {
+				seen[link] = true
 				fmt.Println("\t" + link)
 				go func(link string) {
 					worklist <- crawl(link)
