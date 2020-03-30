@@ -2,11 +2,12 @@ package api
 
 import (
 	"fmt"
-	"golang-distributed-parallel-image-processing/api/login"
-	"golang-distributed-parallel-image-processing/api/logout"
-	"golang-distributed-parallel-image-processing/api/status"
-	"golang-distributed-parallel-image-processing/api/upload"
 	"net/http"
+
+	"./login"
+	"./logout"
+	"./status"
+	"./upload"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"

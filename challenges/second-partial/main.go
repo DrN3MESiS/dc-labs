@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"golang-distributed-parallel-image-processing/api"
+
+	"./api"
 
 	"github.com/labstack/echo"
 )

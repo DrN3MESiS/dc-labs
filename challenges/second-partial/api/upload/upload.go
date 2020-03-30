@@ -3,11 +3,12 @@ package upload
 import (
 	"errors"
 	"fmt"
-	"golang-distributed-parallel-image-processing/api/helpers"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
+
+	"../helpers"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 

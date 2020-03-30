@@ -2,8 +2,9 @@ package logout
 
 import (
 	"fmt"
-	"golang-distributed-parallel-image-processing/api/helpers"
 	"net/http"
+
+	"../helpers"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"

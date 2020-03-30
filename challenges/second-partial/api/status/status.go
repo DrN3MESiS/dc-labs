@@ -2,9 +2,10 @@ package status
 
 import (
 	"fmt"
-	"golang-distributed-parallel-image-processing/api/helpers"
 	"net/http"
 	"time"
+
+	"../helpers"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
