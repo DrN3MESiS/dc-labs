@@ -7,13 +7,16 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
+	"time"
 
-	pb "github.com/CodersSquad/dc-labs/challenges/third-partial/proto"
-	"go.nanomsg.org/mangos"
-	"go.nanomsg.org/mangos/protocol/sub"
+	pb "golang-distributed-parallel-image-processing/proto"
+
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/profiling/proto"
 
 	// register transports
+	"go.nanomsg.org/mangos/protocol/respondent"
 	_ "go.nanomsg.org/mangos/transport/all"
 )
 
@@ -23,24 +26,24 @@ var (
 
 // server is used to implement helloworld.GreeterServer.
 type server struct {
-	pb.UnimplementedGreeterServer
+	proto.UnimplementedProfilingServer
 }
 
 var (
 	controllerAddress = ""
 	workerName        = ""
 	tags              = ""
+	usage             = 0
+	status            = "Idle"
+	port              = 0
+	jobsDone          = 0
 )
+
+/* System Functions */
 
 func die(format string, v ...interface{}) {
 	fmt.Fprintln(os.Stderr, fmt.Sprintf(format, v...))
 	os.Exit(1)
-}
-
-// SayHello implements helloworld.GreeterServer
-func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	log.Printf("RPC: Received: %v", in.GetName())
-	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
 func init() {
@@ -49,31 +52,61 @@ func init() {
 	flag.StringVar(&tags, "tags", "gpu,superCPU,largeMemory", "Comma-separated worker tags")
 }
 
-// joinCluster is meant to join the controller message-passing server
+/* Response Functions */
+
+func (s *server) CreateJob(ctx context.Context, in *pb.JobRequest) (*pb.JobReply, error) {
+	switch in.Msg {
+	case "test":
+		/*Log*/
+		jobsDone++
+		/*Task*/
+		log.Printf("[Worker] %+v: I've been called to do a test", workerName)
+		usage++
+		status = "Running"
+		time.Sleep(time.Second * 5)
+		response := &pb.JobReply{Msg: workerName}
+		usage--
+		status = "Idle"
+		return response, nil
+	default:
+		/*Log*/
+		jobsDone++
+		/*Task*/
+		log.Printf("[Worker] %+v: I've been called by an RPC, but no task was received", workerName)
+		usage++
+		status = "Running"
+		response := &pb.JobReply{Msg: "RPC not valid"}
+		usage--
+		status = "Idle"
+		return response, nil
+	}
+}
+
 func joinCluster() {
-	var sock mangos.Socket
+	errorMessage := "[ERR] Worker: (" + workerName + ") -> "
+
 	var err error
-	var msg []byte
-
-	if sock, err = sub.NewSocket(); err != nil {
-		die("can't get new sub socket: %s", err.Error())
-	}
-
-	log.Printf("Connecting to controller on: %s", controllerAddress)
-	if err = sock.Dial(controllerAddress); err != nil {
-		die("can't dial on sub socket: %s", err.Error())
-	}
-	// Empty byte array effectively subscribes to everything
-	err = sock.SetOption(mangos.OptionSubscribe, []byte(""))
+	socket, err := respondent.NewSocket()
 	if err != nil {
-		die("cannot subscribe: %s", err.Error())
+		die(errorMessage + err.Error())
+	}
+
+	err = socket.Dial(controllerAddress)
+	if err != nil {
+		die(errorMessage + err.Error())
 	}
 	for {
-		if msg, err = sock.Recv(); err != nil {
-			die("Cannot recv: %s", err.Error())
+		_, err = socket.Recv()
+		if err != nil {
+			die(errorMessage + "Error while Recv() ->" + err.Error())
 		}
-		log.Printf("Message-Passing: Worker(%s): Received %s\n", workerName, string(msg))
+
+		err = socket.Send([]byte(createDataString()))
+		if err != nil {
+			die(errorMessage + err.Error())
+		}
 	}
+
 }
 
 func getAvailablePort() int {
@@ -93,19 +126,26 @@ func getAvailablePort() int {
 func main() {
 	flag.Parse()
 
+	rpcPort := getAvailablePort()
+	port = rpcPort
+
 	// Subscribe to Controller
 	go joinCluster()
 
 	// Setup Worker RPC Server
-	rpcPort := getAvailablePort()
-	log.Printf("Starting RPC Service on localhost:%v", rpcPort)
+	log.Printf("[W] "+workerName+": Starting RPC Service on localhost:%v", rpcPort)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", rpcPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterGreeterServer(s, &server{})
+	pb.RegisterControllerServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+}
+
+func createDataString() string {
+	data := workerName + "|" + status + "|" + strconv.Itoa(usage) + "|" + tags + "|" + strconv.Itoa(port) + "|" + strconv.Itoa(jobsDone)
+	return data
 }
