@@ -1,7 +1,7 @@
 # Architecture Document
 
 This server arquitecture consists in a Single Mother Server that handles jobs to it's workers.
-Petitions are made via a REST API server.
+Petitions are made via REST API endpoints that require previous authentication.
 
 # Work Balance
 
