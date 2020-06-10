@@ -2,31 +2,82 @@ package main
 
 import (
 	"fmt"
+	"golang-distributed-parallel-image-processing/api"
+	"golang-distributed-parallel-image-processing/api/helpers"
+	"golang-distributed-parallel-image-processing/controller"
+	"golang-distributed-parallel-image-processing/models"
+	"golang-distributed-parallel-image-processing/scheduler"
 	"log"
-	"math/rand"
-	"time"
+	"os"
 
-	"github.com/CodersSquad/dc-labs/challenges/third-partial/controller"
-	"github.com/CodersSquad/dc-labs/challenges/third-partial/scheduler"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 func main() {
-	log.Println("Welcome to the Distributed and Parallel Image Processing System")
+	/* Setup Folders*/
+	_ = os.MkdirAll("public/download", 0755)
+	_ = os.MkdirAll("public/results", 0755)
 
-	// Start Controller
-	go controller.Start()
-
-	// Start Scheduler
+	/* Setup Variables */
+	ControllerConnectionURL := "tcp://localhost:40899"
+	APIPort := ":8080"
+	currentWorkers := map[string]models.Worker{}
 	jobs := make(chan scheduler.Job)
-	go scheduler.Start(jobs)
-	// Send sample jobs
-	sampleJob := scheduler.Job{Address: "localhost:50051", RPCName: "hello"}
+	workloadsFileNumbers := make(map[string]int64)
 
-	for {
-		sampleJob.RPCName = fmt.Sprintf("hello-%v", rand.Intn(10000))
-		jobs <- sampleJob
-		time.Sleep(time.Second * 5)
+	/* Scheduler Setup */
+	go scheduler.Start(jobs, currentWorkers)
+
+	/* Controller Setup */
+	go controller.Start(ControllerConnectionURL, currentWorkers)
+	log.Printf("[SETUP] Controller Connection URL: %+v", ControllerConnectionURL)
+
+	/* API EndPoint Setup */
+	e := echo.New()
+
+	/* Custom Context */
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			cc := &helpers.CustomContext{c, currentWorkers, workloadsFileNumbers, jobs}
+			return next(cc)
+		}
+	})
+
+	modules := api.LoadModules()
+	fmt.Println("== URLs Loaded == ")
+	/* Static Server Routes */
+
+	fmt.Println("\tSTATIC:\t" + "/public")
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:   "public/results",
+		Browse: true,
+	}))
+	e.Use(middleware.Static("public/results"))
+
+	for _, mod := range modules {
+		switch mod.Method {
+		case "GET":
+			fmt.Println("\tGET:\t" + mod.Path)
+			if mod.Middleware != nil {
+				e.GET(mod.Path, mod.Function, *mod.Middleware)
+			} else {
+				e.GET(mod.Path, mod.Function)
+			}
+			break
+		case "POST":
+			fmt.Println("\tPOST:\t" + mod.Path)
+			if mod.Middleware != nil {
+				e.POST(mod.Path, mod.Function, *mod.Middleware)
+			} else {
+				e.POST(mod.Path, mod.Function)
+			}
+			break
+		}
 	}
-	// API
-	// Here's where your API setup will be
+
+	helpers.ActiveBotTokens["admin"] = true //REMOVE ///000
+
+	go e.Logger.Fatal(e.Start(APIPort))
+
 }
