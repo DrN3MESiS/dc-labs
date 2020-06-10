@@ -20,4 +20,12 @@ This architecture is capable of handling as many workers as it is required in or
 - Endpoint: [/upload] Acessing this endpoint will give you the ability to Upload an image to the system
 - Endpoint: [/logout] Acessing this endpoint will revoke the current token.
 
+# Filters:
+
+### Current Available Filters:
+
+- "zero"
+- "binary"
+- "inverse"
+
 ### For a user guide, please visit the file <user-guide.md> in this repository
