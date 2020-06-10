@@ -49,9 +49,10 @@ func StatusResponse(c echo.Context) error {
 	}
 
 	return helpers.ReturnJSONMap(c, http.StatusOK, map[string]interface{}{
-		"message": "Hi " + claims["user"].(string) + ", the Distributed Parallel Image Processing System is up and running!",
-		"time":    time.Now().String(),
-		"workers": workers,
+		"message":           "Hi " + claims["user"].(string) + ", the Distributed Parallel Image Processing System is up and running!",
+		"time":              time.Now().String(),
+		"available_filters": "zero, binary, inverse",
+		"workers":           workers,
 	})
 }
 
