@@ -37,7 +37,7 @@ type server struct {
 	proto.UnimplementedProfilingServer
 }
 
-var maxJobs int = 100
+var maxJobs int = 10
 
 var (
 	controllerAddress = ""

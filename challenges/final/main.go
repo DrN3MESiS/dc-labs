@@ -23,7 +23,7 @@ func main() {
 	ControllerConnectionURL := "tcp://localhost:40899"
 	APIPort := ":8080"
 	currentWorkers := map[string]models.Worker{}
-	jobs := make(chan scheduler.Job)
+	jobs := make(chan scheduler.Job, 5)
 	workloadsFileNumbers := make(map[string]int64)
 
 	/* Scheduler Setup */

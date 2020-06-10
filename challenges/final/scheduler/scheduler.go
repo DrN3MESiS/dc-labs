@@ -28,7 +28,7 @@ func schedule(job Job) {
 	defer conn.Close()
 	c := pb.NewGreeterClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	r, err := c.SayHello(ctx, &pb.HelloRequest{Name: job.RPCName})
 	if err != nil {
